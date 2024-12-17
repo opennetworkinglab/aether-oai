@@ -51,9 +51,13 @@
 - pause:
     seconds: 10
 
+- set_fact:
+    ping_target: "{{ core.upf.core_subnet[:-3] }}"
+  when: inventory_hostname in groups['oai_nodes']
+
 - name: run ping command to check if the UE is running and show output
   shell: |
-    docker exec rfsim5g-oai-nr-ue ping -c 2 -I oaitun_ue1 192.168.250.1
+    docker exec rfsim5g-oai-nr-ue ping -c 2 -I oaitun_ue1 {{ ping_target }}
   register: uEsimPingOutput
   when: inventory_hostname in groups['oai_nodes'][0]
 

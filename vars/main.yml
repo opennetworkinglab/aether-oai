@@ -18,8 +18,7 @@ oai:
 
 core:
   upf:
-    ip_prefix: "192.168.252.0/24"
-    iface: "access"
+    access_subnet: "192.168.252.1/24"
   amf:
     ip: "172.16.248.6"
 

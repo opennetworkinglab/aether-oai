@@ -3,9 +3,9 @@
 - set_fact:
     systemd_network_dir: /etc/systemd/network
 
-- name: "remove a static route on oai host for {{ core.upf.ip_prefix }} via {{ core.amf.ip }}"
+- name: "remove a static route on oai host for {{ core.upf.access_subnet }} via {{ core.amf.ip }}"
   shell: |
-    ip route del {{ core.upf.ip_prefix }} via {{ core.amf.ip }}
+    ip route del {{ core.upf.access_subnet }} via {{ core.amf.ip }}
   when: (inventory_hostname in groups['oai_nodes'][0]) and (inventory_hostname not in groups['master_nodes'])
   become: true
   ignore_errors: yes
@@ -18,10 +18,10 @@
   become: true
   ignore_errors: yes
 
-- name: "remove iptable rule: forward from {{ oai.docker.network.bridge.name }} to access"
+- name: "remove iptable rule: forward from access to {{ oai.docker.network.bridge.name }}"
   iptables:
     chain: FORWARD
-    in_interface: "{{ core.upf.iface }}"
+    in_interface: "access"
     out_interface: "{{ oai.docker.network.bridge.name }}"
     jump: ACCEPT
     state: absent
@@ -33,7 +33,7 @@
   iptables:
     chain: FORWARD
     in_interface: "{{ oai.docker.network.bridge.name }}"
-    out_interface: "{{ core.upf.iface }}"
+    out_interface: "access"
     jump: ACCEPT
     state: absent
   when: (inventory_hostname in groups['oai_nodes'][0]) and (inventory_hostname in groups['master_nodes'])

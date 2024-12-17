@@ -69,19 +69,19 @@
   when: inventory_hostname in groups['oai_nodes'][0]
   become: true
 
-- name: "add iptable rule: forward from {{ oai.docker.network.bridge.name }} to {{ core.upf.iface }}"
+- name: "add iptable rule: forward from {{ oai.docker.network.bridge.name }} to access"
   iptables:
     chain: FORWARD
     in_interface: "{{ oai.docker.network.bridge.name }}"
-    out_interface: "{{ core.upf.iface }}"
+    out_interface: "access"
     jump: ACCEPT
   when: (inventory_hostname in groups['oai_nodes'][0]) and (inventory_hostname in groups['master_nodes'])
   become: true
 
-- name: "add iptable rule: forward from {{ oai.docker.network.bridge.name }} to {{ core.upf.iface }}"
+- name: "add iptable rule: forward from access to {{ oai.docker.network.bridge.name }}"
   iptables:
     chain: FORWARD
-    in_interface: "{{ core.upf.iface }}"
+    in_interface: "access"
     out_interface: "{{ oai.docker.network.bridge.name }}"
     jump: ACCEPT
   when: (inventory_hostname in groups['oai_nodes'][0]) and (inventory_hostname in groups['master_nodes'])
@@ -90,7 +90,7 @@
 # TODO: use ansible's net_static_route module
 - name: configure static route for upf traffic on oai node
   shell: |
-    ip route add {{ core.upf.ip_prefix }} via {{ core.amf.ip }}
+    ip route add {{ core.upf.access_subnet }} via {{ core.amf.ip }}
   when: (inventory_hostname in groups['oai_nodes'][0]) and (inventory_hostname not in groups['master_nodes'])
   become: true
   ignore_errors: yes
