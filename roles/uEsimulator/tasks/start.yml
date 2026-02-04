@@ -49,6 +49,7 @@
     capabilities:
     - NET_ADMIN
     - NET_RAW
+    restart_policy: unless-stopped
     state: started
     detach: true
   vars:

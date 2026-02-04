@@ -53,40 +53,55 @@
   when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
   become: true
 
-- name: "add iptable rule: forward from {{ oai.docker.network.data_iface }} to {{ oai.docker.network.bridge.name }}"
-  iptables:
-    chain: FORWARD
-    in_interface: "{{ oai.docker.network.data_iface }}"
-    out_interface: "{{ oai.docker.network.bridge.name }}"
-    jump: ACCEPT
+- name: install iptables-persistent package
+  apt:
+    name: iptables-persistent
+    state: present
+    update_cache: yes
+  when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
+  become: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: create /etc/iptables directory
+  file:
+    path: /etc/iptables
+    state: directory
   when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
   become: true
 
-- name: "add iptable rule: forward from {{ oai.docker.network.bridge.name }} to {{ oai.docker.network.data_iface }}"
-  iptables:
-    chain: FORWARD
-    in_interface: "{{ oai.docker.network.bridge.name }}"
-    out_interface: "{{ oai.docker.network.data_iface }}"
-    jump: ACCEPT
+- name: deploy oai iptables rules configuration
+  template:
+    src: roles/router/templates/oai-iptables-rules.v4
+    dest: /etc/iptables/oai-rules.v4
   when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
   become: true
 
-- name: "add iptable rule: forward from {{ oai.docker.network.bridge.name }} to access"
-  iptables:
-    chain: FORWARD
-    in_interface: "{{ oai.docker.network.bridge.name }}"
-    out_interface: "access"
-    jump: ACCEPT
-  when: (inventory_hostname in groups['oai_nodes']) and (inventory_hostname in groups['master_nodes']) and oai.docker.network.name != "host"
+- name: copy oai-iptables.service to /etc/systemd/system/oai-iptables.service
+  template:
+    src: roles/router/templates/oai-iptables.service
+    dest: /etc/systemd/system/oai-iptables.service
+  when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
   become: true
 
-- name: "add iptable rule: forward from access to {{ oai.docker.network.bridge.name }}"
-  iptables:
-    chain: FORWARD
-    in_interface: "access"
-    out_interface: "{{ oai.docker.network.bridge.name }}"
-    jump: ACCEPT
-  when: (inventory_hostname in groups['oai_nodes']) and (inventory_hostname in groups['master_nodes']) and oai.docker.network.name != "host"
+- name: force systemd to reread configs for iptables service
+  systemd:
+    daemon_reload: true
+  when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
+  become: true
+
+- name: enable oai-iptables.service
+  systemd:
+    name: oai-iptables.service
+    enabled: true
+  when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
+  become: true
+
+- name: start oai-iptables.service
+  systemd:
+    name: oai-iptables.service
+    state: started
+  when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
   become: true
 
 # TODO: use ansible's net_static_route module
