@@ -20,6 +20,38 @@
   become: true
   ignore_errors: yes
 
+- name: stop oai-iptables.service
+  systemd:
+    name: oai-iptables.service
+    state: stopped
+  when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
+  become: true
+  ignore_errors: yes
+
+- name: disable oai-iptables.service
+  systemd:
+    name: oai-iptables.service
+    enabled: false
+  when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
+  become: true
+  ignore_errors: yes
+
+- name: delete /etc/systemd/system/oai-iptables.service
+  file:
+    path: /etc/systemd/system/oai-iptables.service
+    state: absent
+  when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
+  become: true
+  ignore_errors: yes
+
+- name: delete persistent oai iptables rules file
+  file:
+    path: /etc/iptables/oai-rules.v4
+    state: absent
+  when: inventory_hostname in groups['oai_nodes'] and oai.docker.network.name != "host"
+  become: true
+  ignore_errors: yes
+
 - name: "remove iptable rule: forward from access to {{ oai.docker.network.bridge.name }}"
   iptables:
     chain: FORWARD

@@ -51,6 +51,7 @@
     volumes:
       - /tmp/oai-gnb.conf:/opt/oai-gnb/etc/gnb.conf
     privileged: true
+    restart_policy: unless-stopped
     state: started
     detach: true
   when: inventory_hostname in groups['oai_nodes']
